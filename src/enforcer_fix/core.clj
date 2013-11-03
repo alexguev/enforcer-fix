@@ -6,10 +6,12 @@
             [clojure.data.zip.xml :refer [xml-> xml1-> text]]))
 
 ;; the parent pom dependencies are added to the pom of every child project
-
-;; resolve properties
+;; resolve version from properties
 ;; resolve version from dependencyManagement
+;; resolve version from property {project.version}
 
+;; use project to resolve dependencies of project dependencies
+;; use local maven repo to resolve dependencies of project dependencies
 
 (declare parse)
 
@@ -21,12 +23,6 @@
 (defn assoc-modules [pom modules-xml]
   (assoc pom :modules (into [] (map (partial parse-module pom) modules-xml))))
 
-(defn parse-dependency [dependency-xml]
-  {:groupId (xml1-> dependency-xml :groupId text)
-   :artifactId (xml1-> dependency-xml :artifactId text)
-   :version (xml1-> dependency-xml :version text)})
-
-
 ;; FIXME we are resolving version rather than property here
 (defn resolve-property [pom dependency]
   (update-in dependency [:version]
@@ -36,6 +32,7 @@
                    (or (get-in pom [:properties k]) v)))
                )))
 
+; FIXME one resolve-version that resolves a version from either properties or dependencyManagement
 (defn resolve-version [pom dependency]
   (let [k-fn (juxt :groupId :artifactId)
         m (group-by k-fn (:dependencyManagement pom))]  ;; FIXME optimize don't calculate this for every dependency
@@ -47,6 +44,11 @@
   (if (= "${project.version}" version)
     (assoc dependency :version (:version pom))
     dependency))
+
+(defn parse-dependency [dependency-xml]
+  {:groupId (xml1-> dependency-xml :groupId text)
+   :artifactId (xml1-> dependency-xml :artifactId text)
+   :version (xml1-> dependency-xml :version text)})
 
 (defn parse-dependencies [pom parent-pom dependencies-xml]
   (->> dependencies-xml
