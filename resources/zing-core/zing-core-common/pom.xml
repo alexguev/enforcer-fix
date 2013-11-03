@@ -13,12 +13,16 @@
     <artifactId>zing-core-common</artifactId>
     <packaging>pom</packaging>
 
+    <properties>
+        <net.tools.version>4.0.5</net.tools.version>
+    </properties>
+
     <dependencies>
 
         <dependency>
             <groupId>net.tools</groupId>
             <artifactId>core</artifactId>
-            <version>1.0.0</version>
+            <version>${net.tools.version}</version>
         </dependency>
 
     </dependencies>

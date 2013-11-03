@@ -21,13 +21,36 @@
 (defn assoc-modules [pom modules-xml]
   (assoc pom :modules (into [] (map (partial parse-module pom) modules-xml))))
 
-(defn parse-dependency [pom dependency-xml]
+(defn parse-dependency [dependency-xml]
   {:groupId (xml1-> dependency-xml :groupId text)
    :artifactId (xml1-> dependency-xml :artifactId text)
    :version (xml1-> dependency-xml :version text)})
 
+
+(defn resolve-property [pom dependency]
+  (update-in dependency [:version]
+             (fn [v]
+               (let [k (second (re-find #"\{(.*)\}" v))]
+                 (or (get-in pom [:properties k]) v)))))
+
+(defn parse-dependencies [pom parent-pom dependencies-xml]
+  (->> dependencies-xml
+       (map parse-dependency)
+       (map (partial resolve-property pom))
+       ))
+
 (defn assoc-dependencies [pom parent-pom dependencies-xml]
-  (assoc pom :dependencies (into (or (:dependencies parent-pom) []) (map (partial parse-dependency pom) dependencies-xml))))
+  (assoc pom :dependencies (into (or (:dependencies parent-pom) [])
+                                 (parse-dependencies pom parent-pom dependencies-xml))))
+
+
+(defn parse-property [property-xml]
+  [(name (:tag property-xml)) (first (:content property-xml))])
+
+
+(defn assoc-properties [pom parent-pom properties-xml]
+  (assoc pom :properties (merge (:properties parent-pom)
+                                (apply hash-map (mapcat parse-property properties-xml)))))
 
 (defn parse [parent-pom pom-file]
   (let [pom-xml (zip/xml-zip (xml/parse pom-file))]
@@ -35,53 +58,7 @@
         (assoc :groupId (or (xml1-> pom-xml :groupId text) (:groupId parent-pom)))
         (assoc :artifactId (or (xml1-> pom-xml :artifactId text) (:artifactId parent-pom)))
         (assoc :version (or (xml1-> pom-xml :version text) (:version parent-pom)))
+        (assoc-properties parent-pom (xml-> pom-xml :properties zip/children))
         (assoc-dependencies parent-pom (xml-> pom-xml :dependencies :dependency))
         (assoc-modules (xml-> pom-xml :modules :module))
         )))
-
-
-(defn explode [dep]
-  )
-
-(defn dependencies [xml]
-  (let [deps (xml-> xml :dependencies :dependency)]
-    (explode (map #(hash-map :artifactId (text (xml1-> % :artifactId))
-                     :groupId (text (xml1-> % :groupId))
-                     :version (text (xml1-> % :version)))
-          deps))))
-
-(defn properties [xml]
-  (let [props (xml-> xml :properties zip/children)]
-    (reduce #(assoc %1 (str "${" (name (:tag %2)) "}") (first (:content %2)))
-            {}
-            props)))
-
-(defn resolve-properties [props dep]
-  (update-in dep [:version] #(if-let [v (get props %)] v %)))
-
-(defn resolve-versions [vers dep]
-  (update-in dep
-             [:version]
-             #(if-let [coll (get vers ((juxt :groupId :artifactId) dep))]
-                (:versionId (first coll))
-                %)))
-
-(defn find-diverging-dependencies [props vers pom]
-  (->> (parse pom)
-       (dependencies)
-       (map (partial resolve-properties props))
-       (map (partial resolve-versions vers))
-       (group-by (juxt :groupId :artifactId))
-       (filter (fn [[_ v]] (> (count v) 1)))))
-
-(defn find-all-diverging-dependencies [root-pom]
-  (let [xml (parse root-pom)
-        props (properties xml)
-        vers {}
-        projects [root-pom "core/box-core-batch/pom.xml"]]
-    (map (partial find-diverging-dependencies props vers)
-         projects)))
-
-
-
-;;(find-all-diverging-dependencies "/Users/alguevara/codigo/kijiji.ca/pom.xml")

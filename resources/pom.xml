@@ -13,6 +13,11 @@
         <module>zing-core</module>
     </modules>
 
+    <properties>
+        <net.tools.version>4.0.0</net.tools.version>
+        <other.library.version>5.0.0</other.library.version>
+    </properties>
+
     <dependencies>
 
         <dependency>

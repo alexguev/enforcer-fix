@@ -21,6 +21,12 @@
             <version>1.0.0</version>
         </dependency>
 
+        <dependency>
+            <groupId>other.library</groupId>
+            <artifactId>core</artifactId>
+            <version>${other.library.version}</version>
+        </dependency>
+
     </dependencies>
 
 </project>
