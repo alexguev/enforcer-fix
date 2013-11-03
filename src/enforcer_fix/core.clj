@@ -32,7 +32,7 @@
   (update-in dependency [:version]
              (fn [v]
                (when v
-                 (let [k (second (re-find #"\{(.*)\}" v))]
+                 (let [k (second (re-find #"\{(.+)\}" v))]
                    (or (get-in pom [:properties k]) v)))
                )))
 
@@ -43,11 +43,17 @@
       (assoc dependency :version (:version d))
       dependency)))
 
+(defn resolve-project-version [pom {:keys [version] :as dependency}]
+  (if (= "${project.version}" version)
+    (assoc dependency :version (:version pom))
+    dependency))
+
 (defn parse-dependencies [pom parent-pom dependencies-xml]
   (->> dependencies-xml
        (map parse-dependency)
-       (map (partial resolve-property pom))
+       (map (partial resolve-property pom))   ;; FIXME better names for these three
        (map (partial resolve-version pom))
+       (map (partial resolve-project-version pom))
        ))
 
 (defn assoc-dependencies [pom parent-pom k dependencies-xml]
