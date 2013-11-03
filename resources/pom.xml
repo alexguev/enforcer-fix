@@ -18,6 +18,20 @@
         <other.library.version>5.0.0</other.library.version>
     </properties>
 
+    <dependencyManagement>
+
+        <dependencies>
+
+            <dependency>
+                <groupId>the.library</groupId>
+                <artifactId>core</artifactId>
+                <version>3.0.0</version>
+            </dependency>
+
+        </dependencies>
+
+    </dependencyManagement>
+
     <dependencies>
 
         <dependency>

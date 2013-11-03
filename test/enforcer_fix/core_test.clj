@@ -10,8 +10,10 @@
                        :properties {"net.tools.version" "4.0.5"
                                     "other.library.version" "5.0.0"}
                        :modules []
+                       :dependencyManagement [{:groupId "the.library" :artifactId "core" :version "3.0.0"}]
                        :dependencies [{:groupId "super.library" :artifactId "core" :version "1.0.0"}
-                                      {:groupId "net.tools" :artifactId "core" :version "4.0.5"}]
+                                      {:groupId "net.tools" :artifactId "core" :version "4.0.5"}
+                                      {:groupId "the.library" :artifactId "core" :version "3.0.0"}]
                        })
 
 (def zing-core-batch {:pom (file "resources/zing-core/zing-core-batch/pom.xml")
@@ -21,6 +23,7 @@
                       :properties {"net.tools.version" "4.0.0"
                                    "other.library.version" "5.0.0"}
                       :modules []
+                      :dependencyManagement [{:groupId "the.library" :artifactId "core" :version "3.0.0"}]
                       :dependencies [{:groupId "super.library" :artifactId "core" :version "1.0.0"}
                                      {:groupId "foo.baz" :artifactId "zing-core-common" :version "1.0.0"}
                                      {:groupId "other.library" :artifactId "core" :version "5.0.0"}]
@@ -32,6 +35,7 @@
                 :version "1.0.0"
                 :properties {"net.tools.version" "4.0.0"
                              "other.library.version" "5.0.0"}
+                :dependencyManagement [{:groupId "the.library" :artifactId "core" :version "3.0.0"}]
                 :dependencies [{:groupId "super.library" :artifactId "core" :version "1.0.0"}]
                 :modules [zing-core-common zing-core-batch]})
 
@@ -41,6 +45,7 @@
            :version "1.0.0"
            :properties {"net.tools.version" "4.0.0"
                         "other.library.version" "5.0.0"}
+           :dependencyManagement [{:groupId "the.library" :artifactId "core" :version "3.0.0"}]
            :dependencies [{:groupId "super.library" :artifactId "core" :version "1.0.0"}]
            :modules [zing-core]})
 
@@ -53,9 +58,6 @@
     (is (= (parse {} (file "resources/pom.xml"))
            zing))))
 
-
-;(parse {} (file "/Users/alguevara/codigo/kijiji.ca/pom.xml"))
-
 (let [p (parse {} (file "resources/pom.xml"))]
   p
   (->> p
@@ -64,6 +66,7 @@
        ;:properties
        :modules
        first
+       :dependencies
        ))
 
 

@@ -27,21 +27,32 @@
    :version (xml1-> dependency-xml :version text)})
 
 
+;; FIXME we are resolving version rather than property here
 (defn resolve-property [pom dependency]
   (update-in dependency [:version]
              (fn [v]
-               (let [k (second (re-find #"\{(.*)\}" v))]
-                 (or (get-in pom [:properties k]) v)))))
+               (when v
+                 (let [k (second (re-find #"\{(.*)\}" v))]
+                   (or (get-in pom [:properties k]) v)))
+               )))
+
+(defn resolve-version [pom dependency]
+  (let [k-fn (juxt :groupId :artifactId)
+        m (group-by k-fn (:dependencyManagement pom))]  ;; FIXME optimize don't calculate this for every dependency
+    (if-let [d (first (get m (k-fn dependency)))]
+      (assoc dependency :version (:version d))
+      dependency)))
 
 (defn parse-dependencies [pom parent-pom dependencies-xml]
   (->> dependencies-xml
        (map parse-dependency)
        (map (partial resolve-property pom))
+       (map (partial resolve-version pom))
        ))
 
-(defn assoc-dependencies [pom parent-pom dependencies-xml]
-  (assoc pom :dependencies (into (or (:dependencies parent-pom) [])
-                                 (parse-dependencies pom parent-pom dependencies-xml))))
+(defn assoc-dependencies [pom parent-pom k dependencies-xml]
+  (assoc pom k (into (or (get parent-pom k) [])
+                     (parse-dependencies pom parent-pom dependencies-xml))))
 
 
 (defn parse-property [property-xml]
@@ -59,6 +70,7 @@
         (assoc :artifactId (or (xml1-> pom-xml :artifactId text) (:artifactId parent-pom)))
         (assoc :version (or (xml1-> pom-xml :version text) (:version parent-pom)))
         (assoc-properties parent-pom (xml-> pom-xml :properties zip/children))
-        (assoc-dependencies parent-pom (xml-> pom-xml :dependencies :dependency))
+        (assoc-dependencies parent-pom :dependencyManagement (xml-> pom-xml :dependencyManagement :dependencies :dependency))
+        (assoc-dependencies parent-pom :dependencies (xml-> pom-xml :dependencies :dependency))
         (assoc-modules (xml-> pom-xml :modules :module))
         )))

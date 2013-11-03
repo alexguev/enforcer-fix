@@ -25,6 +25,12 @@
             <version>${net.tools.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>the.library</groupId>
+            <artifactId>core</artifactId>
+        </dependency>
+
+
     </dependencies>
 
 </project>
